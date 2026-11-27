@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: alert-triage-rag
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --timeout 60
+    healthCheckPath: /api/meta
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      # Optional: add ANTHROPIC_API_KEY in the Render dashboard to enable the "Live API" button.
+      - key: LIVE_LIMIT_PER_HOUR
+        value: "10"

@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRIAGE//RAG — Security Alert Triage Console</title>
+<style>
+:root{
+  --bg:#070b10; --panel:#0c131b; --panel2:#101a25; --line:#1b2a3a; --line2:#243a50;
+  --txt:#c9d6e2; --dim:#6d8397; --cy:#22d3ee; --gr:#34d399; --am:#fbbf24; --rd:#f87171; --vi:#a78bfa;
+  --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Inter,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--txt);font:13px/1.5 var(--sans);overflow:hidden;
+  background-image:linear-gradient(rgba(34,211,238,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.035) 1px,transparent 1px);
+  background-size:32px 32px}
+.mono{font-family:var(--mono)}
+button{font:inherit;color:inherit;cursor:pointer}
+header{height:48px;display:flex;align-items:center;gap:16px;padding:0 16px;border-bottom:1px solid var(--line);background:rgba(7,11,16,.92)}
+.logo{font:700 15px var(--mono);letter-spacing:.12em;color:var(--cy)}
+.logo b{color:var(--gr)}
+.chips{display:flex;gap:8px;margin-left:8px}
+.chip{font:11px var(--mono);padding:2px 8px;border:1px solid var(--line2);border-radius:3px;color:var(--dim)}
+.chip b{color:var(--txt);font-weight:600}
+.sp{flex:1}
+.live{display:flex;align-items:center;gap:6px;font:11px var(--mono);color:var(--gr)}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--gr);box-shadow:0 0 8px var(--gr);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+main{height:calc(100% - 48px);display:grid;grid-template-columns:320px 1fr 380px;gap:1px;background:var(--line)}
+section{background:var(--bg);min-height:0;display:flex;flex-direction:column}
+.ph{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.ph .r{margin-left:auto;display:flex;gap:6px;align-items:center}
+.scroll{overflow:auto;min-height:0;flex:1}
+.scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+/* queue */
+.alert{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;position:relative;transition:background .15s}
+.alert:hover{background:var(--panel)}
+.alert.sel{background:var(--panel2);box-shadow:inset 3px 0 var(--cy)}
+.alert .t{display:flex;gap:8px;align-items:center;font:12px var(--mono)}
+.alert .t .id{color:var(--cy);white-space:nowrap}
+.alert .t .rt{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.alert .d{color:var(--dim);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px}
+.alert .gt{font:10px var(--mono);color:var(--vi);margin-top:3px;display:none}
+body.gt .alert .gt{display:block}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line2);margin-left:auto}
+.sev-low{--c:var(--gr)}.sev-medium{--c:var(--am)}.sev-high{--c:#fb923c}.sev-critical{--c:var(--rd)}
+.dot.s{background:var(--c);box-shadow:0 0 8px var(--c)}
+.toggle{font:10px var(--mono);border:1px solid var(--line2);background:none;padding:2px 7px;border-radius:3px;color:var(--dim)}
+.toggle.on{color:var(--vi);border-color:var(--vi)}
+/* center */
+.center{padding:16px;gap:14px;display:flex;flex-direction:column;overflow:auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.card .hd{padding:8px 12px;border-bottom:1px solid var(--line);font:600 10px var(--mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card .bd{padding:12px}
+.route{font:12px var(--mono);color:var(--dim)}.route b{color:var(--txt)}
+.desc{margin:8px 0 10px;font-size:14px;line-height:1.55;color:var(--txt)}
+.metrics{display:flex;flex-wrap:wrap;gap:6px}
+.m{font:11px var(--mono);padding:2px 8px;background:var(--panel2);border:1px solid var(--line2);border-radius:3px;color:var(--dim)}
+.m b{color:var(--cy);font-weight:600}
+.modes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.mode{font:11px var(--mono);padding:5px 10px;border:1px solid var(--line2);background:var(--panel2);border-radius:4px;color:var(--dim);transition:.15s}
+.mode:hover{color:var(--txt);border-color:var(--cy)}
+.mode.on{color:#04121a;background:var(--cy);border-color:var(--cy);font-weight:700}
+.mode.bad.on{background:var(--rd);border-color:var(--rd)}
+.actions{display:flex;gap:8px}
+.btn{font:700 12px var(--mono);letter-spacing:.08em;padding:9px 16px;border-radius:4px;border:1px solid var(--cy);background:rgba(34,211,238,.1);color:var(--cy);transition:.15s}
+.btn:hover{background:var(--cy);color:#04121a}
+.btn.sec{border-color:var(--line2);color:var(--dim);background:none}
+.btn.sec:hover{border-color:var(--vi);color:var(--vi);background:none}
+.btn:disabled{opacity:.5;pointer-events:none}
+/* pipeline */
+.pipe{display:flex;align-items:center;gap:0;padding:14px 8px;overflow-x:auto}
+.node{flex:0 0 auto;min-width:96px;text-align:center;padding:8px 6px;border:1px solid var(--line2);border-radius:5px;background:var(--panel2);font:11px var(--mono);color:var(--dim);transition:.25s;position:relative}
+.node small{display:block;font-size:9px;margin-top:2px;opacity:.8}
+.link{flex:1 1 14px;min-width:14px;height:2px;background:var(--line2);position:relative;overflow:hidden}
+.link.on::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--cy),transparent);animation:flow .7s linear infinite}
+@keyframes flow{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.node.run{border-color:var(--cy);color:var(--cy);box-shadow:0 0 14px rgba(34,211,238,.35)}
+.node.ok{border-color:var(--gr);color:var(--gr)}
+.node.fail{border-color:var(--rd);color:var(--rd);box-shadow:0 0 14px rgba(248,113,113,.3)}
+.node.skip{opacity:.4}
+.node.fb{border-color:var(--am);color:var(--am);box-shadow:0 0 14px rgba(251,191,36,.3)}
+/* result */
+.res-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.atk{font:700 20px var(--mono);letter-spacing:.04em;color:#fff;text-transform:uppercase}
+.badge{font:700 11px var(--mono);padding:3px 9px;border-radius:3px;letter-spacing:.1em;text-transform:uppercase}
+.badge.sev{color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.badge.src-llm{color:var(--vi);border:1px solid var(--vi)}
+.badge.src-fallback{color:var(--am);border:1px solid var(--am)}
+.badge.src-offline{color:var(--cy);border:1px solid var(--cy)}
+.lat{font:11px var(--mono);color:var(--dim);margin-left:auto}
+.sum{margin:10px 0;color:var(--txt);font-size:13.5px}
+.errbox{font:12px var(--mono);color:var(--rd);background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.35);border-radius:4px;padding:8px 10px;margin:8px 0}
+.act{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px dashed var(--line)}
+.act:first-child{border-top:0}
+.act .n{font:11px var(--mono);color:var(--dim);padding-top:2px}
+.act .tx{flex:1}
+.cite{font:11px var(--mono);padding:1px 7px;border-radius:3px;border:1px solid var(--gr);color:var(--gr);background:rgba(52,211,153,.08);cursor:pointer;white-space:nowrap;transition:.15s}
+.cite:hover,.cite.hl{background:var(--gr);color:#04140d}
+.jtoggle{margin-left:auto}
+pre.json{font:11.5px/1.5 var(--mono);color:#9fb3c8;background:#060a0f;border:1px solid var(--line);border-radius:4px;padding:10px;overflow:auto;max-height:240px;display:none;margin-top:10px}
+pre.json.show{display:block}
+.k{color:var(--cy)}.s{color:var(--gr)}.nn{color:var(--am)}
+/* right */
+.ret{padding:10px 12px;border-bottom:1px solid var(--line);transition:.2s}
+.ret.hl{background:rgba(52,211,153,.09);box-shadow:inset 3px 0 var(--gr)}
+.ret .h{display:flex;gap:8px;align-items:center;font:11px var(--mono)}
+.ret .h .id{color:var(--cy)}
+.bar{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cy),var(--gr));width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.ret .tt{font-size:11px;color:var(--dim);margin:4px 0 2px;font-family:var(--mono)}
+.ret .tx{font-size:12px;color:var(--txt);opacity:.85}
+.used{font:10px var(--mono);color:var(--gr)}
+.log{height:170px;border-top:1px solid var(--line);background:#050810;font:11px/1.6 var(--mono);padding:8px 12px;overflow:auto}
+.log div{white-space:pre-wrap}.log .t{color:var(--dim)}.log .ok{color:var(--gr)}.log .er{color:var(--rd)}.log .wn{color:var(--am)}.log .in{color:var(--cy)}
+.empty{padding:40px 20px;text-align:center;color:var(--dim);font:12px var(--mono)}
+/* tabs */
+.tabs{display:flex;gap:2px}
+.tab{font:11px var(--mono);padding:4px 10px;border:1px solid transparent;border-radius:3px;background:none;color:var(--dim)}
+.tab.on{color:var(--cy);border-color:var(--line2);background:var(--panel2)}
+textarea{width:100%;min-height:90px;background:#060a0f;border:1px solid var(--line2);border-radius:4px;color:var(--txt);font:12.5px var(--mono);padding:10px;resize:vertical;outline:none}
+textarea:focus{border-color:var(--cy)}
+/* eval */
+.evg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.ev{font:11px var(--mono);padding:6px 8px;border:1px solid var(--line2);border-radius:4px;background:var(--panel2);opacity:.35;transition:.3s}
+.ev.in{opacity:1}.ev.good{border-color:var(--gr)}.ev.badr{border-color:var(--rd)}
+.ev .a{color:var(--dim)}.ev .p{color:var(--txt)}.ev .ck{float:right;color:var(--gr)}
+.score{font:700 28px var(--mono);color:var(--gr)}
+.score small{font-size:12px;color:var(--dim);font-weight:400;margin-left:8px}
+@media (max-width:1100px){main{grid-template-columns:1fr;overflow:auto}body{overflow:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">TRIAGE<b>//</b>RAG</div>
+  <div class="chips mono">
+    <span class="chip">runbooks <b id="mRb">–</b></span>
+    <span class="chip">chunks <b id="mCh">–</b></span>
+    <span class="chip">alerts <b id="mAl">–</b></span>
+    <span class="chip">retrieval <b>TF-IDF</b></span>
+  </div>
+  <div class="sp"></div>
+  <div class="live"><i></i>ENGINE READY <span id="clock" style="color:var(--dim);margin-left:8px"></span></div>
+</header>
+
+<main>
+  <!-- LEFT: queue -->
+  <section>
+    <div class="ph">Alert queue <span class="r"><button class="toggle" id="gtBtn">ground truth</button></span></div>
+    <div class="scroll" id="queue"></div>
+  </section>
+
+  <!-- CENTER -->
+  <section>
+    <div class="ph">
+      <div class="tabs"><button class="tab on" data-tab="triage">Triage</button><button class="tab" data-tab="custom">Custom alert</button><button class="tab" data-tab="eval">Evaluation</button></div>
+    </div>
+    <div class="center scroll" id="center">
+      <!-- triage tab -->
+      <div id="tab-triage">
+        <div class="card"><div class="hd">Selected alert <span id="selId" style="color:var(--cy);margin-left:auto"></span></div>
+          <div class="bd" id="detail"><div class="empty">Select an alert from the queue</div></div></div>
+
+        <div class="card" style="margin-top:14px"><div class="hd">LLM backend / fault injection</div>
+          <div class="bd">
+            <div class="modes" id="modes">
+              <button class="mode on" data-m="offline">Offline · rules</button>
+              <button class="mode" data-m="sim_good">LLM · valid output</button>
+              <button class="mode bad" data-m="sim_invalid_json">LLM · invalid JSON</button>
+              <button class="mode bad" data-m="sim_fake_citation">LLM · invented citation</button>
+              <button class="mode bad" data-m="sim_api_error">LLM · API error</button>
+              <button class="mode" data-m="live">Live API</button>
+            </div>
+            <div class="actions"><button class="btn" id="runBtn">▶ RUN TRIAGE</button></div>
+          </div></div>
+
+        <div class="card" style="margin-top:14px"><div class="hd">Pipeline</div>
+          <div class="pipe" id="pipe"></div></div>
+
+        <div class="card" style="margin-top:14px" id="resCard"><div class="hd">Incident summary <button class="toggle jtoggle" id="jBtn">{ } json</button></div>
+          <div class="bd" id="result"><div class="empty">No result yet — press RUN TRIAGE</div></div></div>
+      </div>
+
+      <!-- custom tab -->
+      <div id="tab-custom" style="display:none">
+        <div class="card"><div class="hd">Paste your own alert text</div><div class="bd">
+          <textarea id="customText" spellcheck="false">Host 10.0.4.12 made 530 failed SSH authentication attempts in 4 minutes against root and 40 other usernames from 185.220.101.9.</textarea>
+          <div class="actions" style="margin-top:10px"><button class="btn" id="customBtn">▶ TRIAGE THIS TEXT</button></div>
+          <div class="mono" style="color:var(--dim);font-size:11px;margin-top:8px">Uses the mode selected on the Triage tab. Retrieval and classification run live on your text.</div>
+        </div></div>
+      </div>
+
+      <!-- eval tab -->
+      <div id="tab-eval" style="display:none">
+        <div class="card"><div class="hd">Offline evaluation · 18 labeled alerts (13 attacks + 5 benign)</div><div class="bd">
+          <div class="score" id="score">–<small>true attacks identified</small></div>
+          <div class="actions" style="margin:12px 0"><button class="btn" id="evalBtn">▶ RUN EVALUATION</button></div>
+          <div class="evg" id="evg"></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <section>
+    <div class="ph">Retrieved runbook context <span class="r mono" id="rcount"></span></div>
+    <div class="scroll" id="ctx"><div class="empty">Retrieved chunks appear here, ranked by TF-IDF cosine similarity</div></div>
+    <div class="ph" style="border-top:1px solid var(--line)">Pipeline log</div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let ALERTS=[], sel=null, mode='offline', last=null;
+const STEPS=[['retrieve','RETRIEVE','TF-IDF top-k'],['prompt','PROMPT','JSON schema'],['llm','LLM','generate'],['validate','VALIDATE','schema + citations'],['out','OUTPUT','summary']];
+
+function log(msg,cls='in'){const d=document.createElement('div');const t=new Date().toLocaleTimeString('en-GB');d.innerHTML=`<span class="t">${t}</span> <span class="${cls}">${esc(msg)}</span>`;$('#log').appendChild(d);$('#log').scrollTop=1e9}
+setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString('en-GB'),1000);
+
+function drawPipe(states={}){
+  $('#pipe').innerHTML=STEPS.map(([k,t,s],i)=>`${i?`<div class="link ${states[STEPS[i-1][0]]==='ok'&&states[k]==='run'?'on':''}"></div>`:''}<div class="node ${states[k]||''}" id="n-${k}">${t}<small>${states[k]==='fb'?'fallback':s}</small></div>`).join('');
+}
+drawPipe();
+
+/* ---------- queue ---------- */
+function drawQueue(){
+  $('#queue').innerHTML=ALERTS.map(a=>`<div class="alert ${sel&&sel.alert_id===a.alert_id?'sel':''}" data-id="${a.alert_id}">
+    <div class="t"><span class="id">${a.alert_id}</span><span class="rt">${esc(a.source_ip)} → ${esc(a.dest_ip)}:${a.dest_port}</span><span class="dot ${a.sev?'s sev-'+a.sev:''}"></span></div>
+    <div class="d">${esc(a.description)}</div><div class="gt">truth: ${a.label}${a.pred?` · predicted: ${a.pred}`:''}</div></div>`).join('');
+  $$('.alert').forEach(e=>e.onclick=()=>select(e.dataset.id));
+}
+function select(id){
+  sel=ALERTS.find(a=>a.alert_id===id); drawQueue(); $('#selId').textContent=id;
+  $('#detail').innerHTML=`<div class="route"><b>${esc(sel.source_ip)}</b> → <b>${esc(sel.dest_ip)}</b> : ${sel.dest_port}</div>
+   <div class="desc">${esc(sel.description)}</div>
+   <div class="metrics">${Object.entries(sel.metrics).map(([k,v])=>`<span class="m">${esc(k)}=<b>${esc(v)}</b></span>`).join('')}</div>`;
+  switchTab('triage');
+}
+
+/* ---------- run ---------- */
+async function animate(res){
+  const st={}; const set=async(k,s,ms=380)=>{st[k]=s;drawPipe(st);await sleep(ms)};
+  await set('retrieve','run'); log(`retrieve: ${res.retrieved.length} chunks, top ${res.retrieved[0]?.id} (${res.retrieved[0]?.score})`);
+  showCtx(res); await set('retrieve','ok',150);
+  await set('prompt','run',250); log('prompt: built with runbook excerpts + JSON schema'); await set('prompt','ok',100);
+  if(res.mode==='offline'){ await set('llm','skip',200); await set('validate','skip',150); st.out='run'; drawPipe(st); log('offline mode: rule-based classifier + runbook actions','wn'); await sleep(300); await set('out','ok',100); return}
+  await set('llm','run',500);
+  if(res.error && res.error.startsWith('llm_error')){ await set('llm','fail',250); log(res.error,'er'); await set('validate','skip',150); await set('out','fb',150); log('fallback engaged -> rule-based result','wn'); return}
+  await set('llm','ok',150); log('llm: response received','ok');
+  await set('validate','run',500);
+  if(res.error){ await set('validate','fail',300); log(res.error,'er'); await set('out','fb',150); log('fallback engaged -> rule-based result','wn'); return}
+  await set('validate','ok',150); log('validate: schema ok, all citations found in retrieved text','ok'); await set('out','ok',100);
+}
+async function run(payload){
+  $('#runBtn').disabled=true;$('#customBtn').disabled=true;
+  log(`triage ${payload.alert_id||'ALR-CUSTOM'} · mode=${payload.mode}`);
+  drawPipe(); $('#result').innerHTML='<div class="empty">running…</div>';
+  try{
+    const r=await fetch('/api/triage',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+    const res=await r.json(); if(!r.ok) throw new Error(res.error);
+    last=res; await animate(res); showResult(res);
+    if(payload.alert_id){const a=ALERTS.find(x=>x.alert_id===payload.alert_id);a.sev=res.severity;a.pred=res.attack_type;drawQueue()}
+    log(`done in ${res.latency_ms} ms · source=${res.source}`,'ok');
+  }catch(e){log(String(e),'er');$('#result').innerHTML=`<div class="errbox">${esc(e)}</div>`}
+  $('#runBtn').disabled=false;$('#customBtn').disabled=false;
+}
+function showCtx(res){
+  $('#rcount').textContent=res.retrieved.length+' chunks';
+  const max=Math.max(...res.retrieved.map(r=>r.score),.001);
+  $('#ctx').innerHTML=res.retrieved.map(r=>`<div class="ret" data-id="${r.id}"><div class="h"><span class="id">${r.id}</span><div class="bar"><i style="--w:${r.score/max*100}%"></i></div><span>${r.score.toFixed(3)}</span></div>
+    <div class="tt">${esc(r.runbook)} · ${esc(r.title)}</div><div class="tx">${esc(res.chunk_text[r.id])}</div></div>`).join('');
+  requestAnimationFrame(()=>$$('.bar i').forEach(i=>i.style.width=i.style.getPropertyValue('--w')));
+}
+function hlCite(id,on){ $$('.ret').forEach(e=>e.classList.toggle('hl',on&&e.dataset.id===id)); $$('.cite').forEach(e=>e.classList.toggle('hl',on&&e.dataset.id===id)); if(on){const t=$(`.ret[data-id="${id}"]`);t&&t.scrollIntoView({block:'nearest',behavior:'smooth'})} }
+function jsonHtml(o){return esc(JSON.stringify(o,null,2)).replace(/&quot;([^&]+?)&quot;(?=:)/g,'<span class="k">"$1"</span>').replace(/: &quot;(.*?)&quot;/g,': <span class="s">"$1"</span>')}
+function showResult(r){
+  const out={attack_type:r.attack_type,severity:r.severity,summary:r.summary,recommended_actions:r.recommended_actions,citations:r.citations};
+  $('#result').innerHTML=`<div class="res-top"><span class="atk">${r.attack_type.replace(/_/g,' ')}</span>
+    <span class="badge sev sev-${r.severity}">${r.severity}</span><span class="badge src-${r.source}">${r.source==='llm'?'LLM · validated':r.source==='fallback'?'rule-based fallback':'offline mode'}</span><span class="lat">${r.latency_ms} ms</span></div>
+    ${r.error?`<div class="errbox">⚠ LLM output rejected → ${esc(r.error)}</div>`:''}
+    <div class="sum">${esc(r.summary)}</div>
+    ${r.recommended_actions.map((a,i)=>`<div class="act"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="tx">${esc(a.action)}</span><span class="cite" data-id="${esc(a.citation)}">${esc(a.citation)}</span></div>`).join('')}
+    <pre class="json" id="jsonPre">${jsonHtml(out)}</pre>`;
+  $$('.cite').forEach(c=>{c.onmouseenter=()=>hlCite(c.dataset.id,true);c.onmouseleave=()=>hlCite(c.dataset.id,false);c.onclick=()=>hlCite(c.dataset.id,true)});
+}
+$('#jBtn').onclick=()=>$('#jsonPre')&&$('#jsonPre').classList.toggle('show');
+
+/* ---------- controls ---------- */
+$$('.mode').forEach(b=>b.onclick=()=>{mode=b.dataset.m;$$('.mode').forEach(x=>x.classList.toggle('on',x===b))});
+$('#runBtn').onclick=()=>sel?run({alert_id:sel.alert_id,mode}):log('select an alert first','wn');
+$('#customBtn').onclick=()=>{switchTab('triage');run({description:$('#customText').value,mode})};
+$('#gtBtn').onclick=e=>{document.body.classList.toggle('gt');e.target.classList.toggle('on')};
+function switchTab(t){$$('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));['triage','custom','eval'].forEach(n=>$('#tab-'+n).style.display=n===t?'block':'none')}
+$$('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+document.addEventListener('keydown',e=>{if(e.target.tagName==='TEXTAREA')return;const i=ALERTS.findIndex(a=>sel&&a.alert_id===sel.alert_id);
+  if(e.key==='ArrowDown'&&i<ALERTS.length-1){select(ALERTS[i+1].alert_id);e.preventDefault()}
+  if(e.key==='ArrowUp'&&i>0){select(ALERTS[i-1].alert_id);e.preventDefault()}
+  if(e.key==='Enter'&&sel&&!$('#runBtn').disabled)$('#runBtn').click()});
+
+/* ---------- eval ---------- */
+$('#evalBtn').onclick=async()=>{
+  $('#evalBtn').disabled=true; $('#evg').innerHTML=''; $('#score').firstChild.textContent='…'; log('running offline evaluation on 18 labeled alerts');
+  const d=await (await fetch('/api/eval')).json(); let n=0;
+  $('#evg').innerHTML=d.rows.map(r=>`<div class="ev" id="ev-${r.alert_id}"><span class="a">${r.alert_id} ${r.label==='benign'?'· benign':'· attack'}</span><span class="ck">✓</span><div class="p">${r.predicted}</div></div>`).join('');
+  for(const r of d.rows){await sleep(130);const e=$('#ev-'+r.alert_id);e.classList.add('in',r.ok?'good':'badr');if(r.label!=='benign'&&r.ok){n++;$('#score').firstChild.textContent=`${n}/${d.attacks_total}`}}
+  $('#score').firstChild.textContent=`${d.attacks_correct}/${d.attacks_total}`;
+  log(`evaluation: ${d.attacks_correct}/${d.attacks_total} true attacks identified, ${d.all_correct}/${d.all_total} overall`,'ok'); $('#evalBtn').disabled=false;
+};
+
+/* ---------- boot ---------- */
+(async()=>{
+  const [a,m]=await Promise.all([fetch('/api/alerts').then(r=>r.json()),fetch('/api/meta').then(r=>r.json())]);
+  ALERTS=a; $('#mRb').textContent=m.runbooks;$('#mCh').textContent=m.chunks;$('#mAl').textContent=m.alerts;
+  if(!m.live_available){const b=$('[data-m=live]');b.title='Set ANTHROPIC_API_KEY on the server to enable; without it the pipeline falls back to rules';b.textContent='Live API · no key';b.style.opacity='.55'}
+  drawQueue(); select(ALERTS[0].alert_id); log('engine ready · arrow keys navigate, Enter runs triage');
+})();
+</script>
+</body>
+</html>

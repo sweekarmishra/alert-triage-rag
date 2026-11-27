@@ -1,0 +1,233 @@
+[
+ {
+  "alert_id": "ALR-001",
+  "label": "brute_force",
+  "source_ip": "185.220.101.34",
+  "dest_ip": "10.0.4.12",
+  "dest_port": 22,
+  "description": "Anomalous authentication failures on SSH service. 412 failed logins in 5 minutes from a single source across 37 usernames, followed by one successful login for user admin.",
+  "metrics": {
+   "failed_logins": 412,
+   "distinct_usernames": 37,
+   "window_min": 5
+  }
+ },
+ {
+  "alert_id": "ALR-002",
+  "label": "brute_force",
+  "source_ip": "203.0.113.77",
+  "dest_ip": "10.0.8.20",
+  "dest_port": 3389,
+  "description": "Spike in failed RDP logon events from external address. Password spraying pattern: 1 attempt per account over 150 accounts, 160 failed logins per minute.",
+  "metrics": {
+   "failed_logins": 900,
+   "distinct_usernames": 150,
+   "window_min": 6
+  }
+ },
+ {
+  "alert_id": "ALR-003",
+  "label": "ddos",
+  "source_ip": "multiple (4,812 sources)",
+  "dest_ip": "10.0.1.5",
+  "dest_port": 443,
+  "description": "Inbound packet rate on web gateway rose from 8k to 1.2M packets per second. 94 percent of flows are TCP SYN with no ACK, 310k half-open connections, request timeouts reported.",
+  "metrics": {
+   "pps": 1200000,
+   "syn_ratio": 0.94,
+   "half_open": 310000,
+   "distinct_sources": 4812
+  }
+ },
+ {
+  "alert_id": "ALR-004",
+  "label": "ddos",
+  "source_ip": "multiple (9,300 sources)",
+  "dest_ip": "10.0.1.9",
+  "dest_port": 53,
+  "description": "Volumetric UDP flood toward DNS server, 22 Gbps inbound from thousands of sources with identical 64 byte payloads. Service latency above 5 seconds.",
+  "metrics": {
+   "bandwidth_gbps": 22,
+   "distinct_sources": 9300,
+   "payload_bytes": 64
+  }
+ },
+ {
+  "alert_id": "ALR-005",
+  "label": "port_scan",
+  "source_ip": "198.51.100.23",
+  "dest_ip": "10.0.0.0/24",
+  "dest_port": 0,
+  "description": "One external source sent SYN packets to 1,024 ports across 40 hosts in 90 seconds. 98 percent of connections reset or unanswered, under 60 bytes per flow. Sequential port ordering.",
+  "metrics": {
+   "ports_probed": 1024,
+   "hosts_probed": 40,
+   "window_sec": 90
+  }
+ },
+ {
+  "alert_id": "ALR-006",
+  "label": "port_scan",
+  "source_ip": "10.0.7.44",
+  "dest_ip": "10.0.2.0/24",
+  "dest_port": 0,
+  "description": "Internal workstation probing many hosts on SMB and RDP ports. 250 hosts contacted in 2 minutes, almost all connections reset. Host has no history of network scanning.",
+  "metrics": {
+   "hosts_probed": 250,
+   "window_sec": 120,
+   "internal_source": true
+  }
+ },
+ {
+  "alert_id": "ALR-007",
+  "label": "sql_injection",
+  "source_ip": "192.0.2.88",
+  "dest_ip": "10.0.3.15",
+  "dest_port": 443,
+  "description": "Web application firewall flagged requests to /products?id= containing UNION SELECT and OR 1=1 payloads. 380 requests with varying payloads in 4 minutes, database error messages returned in responses.",
+  "metrics": {
+   "requests": 380,
+   "db_errors": 96,
+   "window_min": 4
+  }
+ },
+ {
+  "alert_id": "ALR-008",
+  "label": "sql_injection",
+  "source_ip": "198.51.100.91",
+  "dest_ip": "10.0.3.18",
+  "dest_port": 80,
+  "description": "Login endpoint received parameters with quote characters, SLEEP(5) time delay and comment markers. Response times of exactly 5 seconds suggest blind injection by an automated tool.",
+  "metrics": {
+   "requests": 210,
+   "sleep_payloads": 64
+  }
+ },
+ {
+  "alert_id": "ALR-009",
+  "label": "data_exfiltration",
+  "source_ip": "10.0.5.61",
+  "dest_ip": "45.33.12.9",
+  "dest_port": 443,
+  "description": "Internal file server uploaded 38 GB to an unfamiliar external cloud storage address at 02:40, roughly 90 times the normal daily outbound volume. Traffic is an encrypted compressed archive.",
+  "metrics": {
+   "outbound_gb": 38,
+   "baseline_gb": 0.4,
+   "hour": 2
+  }
+ },
+ {
+  "alert_id": "ALR-010",
+  "label": "data_exfiltration",
+  "source_ip": "10.0.6.30",
+  "dest_ip": "203.0.113.140",
+  "dest_port": 21,
+  "description": "Employee laptop sent 6 GB over FTP to a foreign IP address after hours. Prior 30 days showed no FTP use. Many zip archives of documents transferred.",
+  "metrics": {
+   "outbound_gb": 6,
+   "protocol": "FTP",
+   "hour": 23
+  }
+ },
+ {
+  "alert_id": "ALR-011",
+  "label": "c2_beaconing",
+  "source_ip": "10.0.9.18",
+  "dest_ip": "91.214.124.5",
+  "dest_port": 8443,
+  "description": "Host connects to the same external IP every 60 seconds with 212 byte payloads, jitter below 2 percent, for 14 hours. Destination appears on a threat intelligence command and control list.",
+  "metrics": {
+   "interval_sec": 60,
+   "jitter_pct": 2,
+   "duration_h": 14,
+   "threat_intel_match": true
+  }
+ },
+ {
+  "alert_id": "ALR-012",
+  "label": "dns_tunneling",
+  "source_ip": "10.0.4.77",
+  "dest_ip": "ns1.x7k2-tunnel.example",
+  "dest_port": 53,
+  "description": "One host issued 48,000 DNS TXT queries to a single domain in one hour. Subdomain labels are 52 characters of random looking text with high entropy, responses larger than 400 bytes.",
+  "metrics": {
+   "dns_queries": 48000,
+   "label_length": 52,
+   "entropy": 4.7,
+   "txt_ratio": 0.9
+  }
+ },
+ {
+  "alert_id": "ALR-013",
+  "label": "privilege_escalation",
+  "source_ip": "10.0.2.31",
+  "dest_ip": "10.0.2.5",
+  "dest_port": 445,
+  "description": "Standard user svc-report was added to the Domain Admins group and then logged on to 11 servers within 10 minutes. Credential dumping tool execution observed on the originating host.",
+  "metrics": {
+   "group_change": true,
+   "servers_logged": 11,
+   "window_min": 10
+  }
+ },
+ {
+  "alert_id": "ALR-014",
+  "label": "benign",
+  "source_ip": "10.0.5.5",
+  "dest_ip": "10.0.12.50",
+  "dest_port": 445,
+  "description": "Outbound transfer of 120 GB from backup server to storage array started at 01:00. Matches the nightly scheduled backup job listed in the change calendar.",
+  "metrics": {
+   "outbound_gb": 120,
+   "scheduled_job": true
+  }
+ },
+ {
+  "alert_id": "ALR-015",
+  "label": "benign",
+  "source_ip": "10.0.20.9",
+  "dest_ip": "10.0.0.0/24",
+  "dest_port": 0,
+  "description": "Port sweep of 1,000 ports across the subnet from the security team scanner during the approved quarterly vulnerability assessment window.",
+  "metrics": {
+   "ports_probed": 1000,
+   "approved_scan": true
+  }
+ },
+ {
+  "alert_id": "ALR-016",
+  "label": "benign",
+  "source_ip": "10.0.1.200",
+  "dest_ip": "10.0.4.12",
+  "dest_port": 22,
+  "description": "Three failed SSH logins for user jsmith followed by a successful login two minutes later. Single source, normal working hours.",
+  "metrics": {
+   "failed_logins": 3,
+   "then_success": true
+  }
+ },
+ {
+  "alert_id": "ALR-017",
+  "label": "benign",
+  "source_ip": "multiple (2,000 sources)",
+  "dest_ip": "10.0.1.5",
+  "dest_port": 443,
+  "description": "Web traffic doubled to 40k requests per second after the marketing email campaign launched. Request mix and user agents look normal and all connections complete.",
+  "metrics": {
+   "requests_per_sec": 40000,
+   "campaign": true
+  }
+ },
+ {
+  "alert_id": "ALR-018",
+  "label": "benign",
+  "source_ip": "10.0.3.3",
+  "dest_ip": "mirror.updates.example",
+  "dest_port": 443,
+  "description": "Server downloaded 9 GB from the software update mirror. Matches the monthly patch deployment window.",
+  "metrics": {
+   "inbound_gb": 9,
+   "patch_window": true
+  }
+ }
+]
