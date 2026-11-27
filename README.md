@@ -8,7 +8,7 @@ and an LLM prompt that returns JSON.
 - **Rule-based fallback** when the LLM fails (invalid JSON, invented citation, API error). Offline mode runs the fallback only.
 - **Offline mode identified the correct attack type for 13 of 13 true attacks** (18 labeled alerts: 13 attacks + 5 benign).
 - **11 pytest tests** with a mocked LLM client covering invalid JSON, invented citations and API errors.
-
+![GUI](docs/screenshot.png)
 ## Run
     pip install -r requirements.txt
     python3 -m pytest -q          # 11 passed
@@ -24,7 +24,7 @@ and an LLM prompt that returns JSON.
     triage/pipeline.py   retrieve -> prompt -> validate -> fallback
     server.py, static/   Flask API + interactive console GUI
     data/runbooks/       9 runbooks (26 sections);  data/alerts.json  18 labeled alerts
-![GUI](docs/screenshot.png)
+
 ## Note on the dataset
 Alerts are synthetic and hand-labeled by the project author, and the fallback rules were written
 against the same alert style. Say "13 labeled attack scenarios" when discussing the 13/13 figure.
