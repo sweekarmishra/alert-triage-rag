@@ -1,4 +1,6 @@
 # LLM-Powered Security Alert Triage Assistant (RAG)
+   
+   
 ![GUI](docs/screenshot.png)
 Retrieval-augmented assistant that turns anomaly alerts into structured incident summaries
 (attack type, severity, recommended actions) grounded in security runbooks, using TF-IDF retrieval
