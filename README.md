@@ -1,5 +1,5 @@
 # LLM-Powered Security Alert Triage Assistant (RAG)
-
+![GUI](docs/screenshot.png)
 Retrieval-augmented assistant that turns anomaly alerts into structured incident summaries
 (attack type, severity, recommended actions) grounded in security runbooks, using TF-IDF retrieval
 and an LLM prompt that returns JSON.
@@ -8,7 +8,7 @@ and an LLM prompt that returns JSON.
 - **Rule-based fallback** when the LLM fails (invalid JSON, invented citation, API error). Offline mode runs the fallback only.
 - **Offline mode identified the correct attack type for 13 of 13 true attacks** (18 labeled alerts: 13 attacks + 5 benign).
 - **11 pytest tests** with a mocked LLM client covering invalid JSON, invented citations and API errors.
-![GUI](docs/screenshot.png)
+
 ## Run
     pip install -r requirements.txt
     python3 -m pytest -q          # 11 passed
