@@ -15,6 +15,7 @@ and an LLM prompt that returns JSON.
     python3 server.py             # GUI at http://127.0.0.1:5055
     export ANTHROPIC_API_KEY=...  # optional, enables the "Live API" mode (model via TRIAGE_MODEL)
 
+![GUI](![GUI](C:\Users\Sweekar.Mishra\Downloads\Validation Projects\alert-triage-rag/screenshot.png)
 ## Layout
     triage/retriever.py  TF-IDF over runbook sections (citation id = section id, e.g. RB-BRUTE-02)
     triage/prompt.py     prompt + JSON schema
