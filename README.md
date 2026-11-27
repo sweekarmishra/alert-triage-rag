@@ -14,7 +14,7 @@ and an LLM prompt that returns JSON.
     python3 -m pytest -q          # 11 passed
     python3 server.py             # GUI at http://127.0.0.1:5055
     export ANTHROPIC_API_KEY=...  # optional, enables the "Live API" mode (model via TRIAGE_MODEL)
-(![GUI](C:\Users\Sweekar.Mishra\Downloads\Validation Projects\alert-triage-rag/screenshot.png)
+
 ## Layout
     triage/retriever.py  TF-IDF over runbook sections (citation id = section id, e.g. RB-BRUTE-02)
     triage/prompt.py     prompt + JSON schema
@@ -24,7 +24,7 @@ and an LLM prompt that returns JSON.
     triage/pipeline.py   retrieve -> prompt -> validate -> fallback
     server.py, static/   Flask API + interactive console GUI
     data/runbooks/       9 runbooks (26 sections);  data/alerts.json  18 labeled alerts
-
+![GUI](docs/screenshot.png)
 ## Note on the dataset
 Alerts are synthetic and hand-labeled by the project author, and the fallback rules were written
 against the same alert style. Say "13 labeled attack scenarios" when discussing the 13/13 figure.
